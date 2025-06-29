@@ -1,0 +1,308 @@
+# Configuración para DenseNet121 - Clasificación de Privacidad Visual
+# Autor: Jennifer Intriago
+# Fecha: 2025
+
+project:
+  name: "proyecto_privacidad_visual"
+  model_name: "densenet121_privacy_classifier"
+  description: "Clasificación de imágenes privadas/públicas usando DenseNet121 con MixUp y Focal Loss"
+  version: "1.0"
+
+# Configuración del modelo
+model:
+  architecture: "densenet121"
+  backbone: "DenseNet121"
+  pretrained: true
+  weights: "IMAGENET1K_V1" # DenseNet121_Weights.IMAGENET1K_V1
+  num_classes: 2
+
+  # Estrategia de congelamiento parcial
+  freeze_strategy: "selective"
+  trainable_blocks:
+    - "features.denseblock3"
+    - "features.denseblock4"
+    - "classifier"
+
+  # Clasificador personalizado
+  classifier:
+    dropout_rate: 0.4
+    layers:
+      - type: "Dropout"
+        p: 0.4
+      - type: "Linear"
+        in_features: 1024 # DenseNet121 feature size
+        out_features: 2
+
+# Configuración de datos
+data:
+  input_size: [224, 224]
+  batch_size: 32
+  num_workers: 0 # Configurado para compatibilidad local/MPS
+  pin_memory: false
+  num_classes: 2
+  class_names: ["Pública", "Privada"]
+
+  # Normalización ImageNet
+  normalization:
+    mean: [0.485, 0.456, 0.406]
+    std: [0.229, 0.224, 0.225]
+
+  # Data Augmentation agresivo para entrenamiento
+  train_transforms:
+    - type: "Resize"
+      size: [224, 224]
+    - type: "RandAugment"
+      num_ops: 2
+      magnitude: 9
+    - type: "RandomHorizontalFlip"
+      p: 0.5
+    - type: "ToTensor"
+    - type: "Normalize"
+      mean: [0.485, 0.456, 0.406]
+      std: [0.229, 0.224, 0.225]
+    - type: "RandomErasing"
+      p: 0.5
+      scale: [0.02, 0.33]
+      ratio: [0.3, 3.3]
+
+  # Transformaciones para validación/test
+  val_transforms:
+    - type: "Resize"
+      size: [224, 224]
+    - type: "ToTensor"
+    - type: "Normalize"
+      mean: [0.485, 0.456, 0.406]
+      std: [0.229, 0.224, 0.225]
+
+  # Estrategia de sampling
+  sampling:
+    strategy: "weighted_random"
+    balance_classes: true
+    weights_calculation: "inverse_frequency"
+
+# Configuración de entrenamiento
+training:
+  epochs: 25
+  strategy: "single_phase_differential_lr"
+
+  # Optimización con Learning Rates Diferenciales
+  optimizer:
+    type: "AdamW"
+    weight_decay: 1e-2
+    layer_lrs:
+      classifier: 1e-3 # MAX_LR_CLASSIFIER
+      denseblock4: 2e-4 # MAX_LR_BLOCK4
+      denseblock3: 5e-4 # MAX_LR_BLOCK3
+
+  # Scheduler
+  scheduler:
+    type: "ReduceLROnPlateau"
+    mode: "min"
+    patience: 3
+    factor: 0.5
+    monitor: "val_loss"
+    verbose: true
+
+# Técnicas de regularización
+regularization:
+  # MixUp Data Augmentation
+  mixup:
+    enabled: true
+    alpha: 0.2
+    apply_prob: 1.0
+    description: "MixUp para mejorar generalización"
+
+  # Dropout en clasificador
+  dropout:
+    rate: 0.4
+    apply_to: ["classifier"]
+
+  # Class Balancing
+  class_balancing:
+    strategy: "weighted_sampling_and_loss"
+    compute_weights: "balanced" # sklearn balanced mode
+
+# Función de pérdida
+loss:
+  type: "focal_loss"
+  gamma: 2.0
+  use_class_weights: true
+  class_weights: "auto" # Se calculan automáticamente
+  description: "Focal Loss para manejar desbalance de clases"
+
+  # Focal Loss parameters
+  focal_loss:
+    gamma: 2.0
+    alpha: null # Se calcula automáticamente con class weights
+    reduction: "mean"
+
+# Métricas de evaluación
+metrics:
+  primary: "accuracy"
+  threshold_optimization: true
+  track:
+    - "accuracy"
+    - "loss"
+    - "precision"
+    - "recall"
+    - "f1_score"
+    - "auc_roc"
+    - "confusion_matrix"
+
+# Configuración de hardware
+hardware:
+  device: "auto" # "mps", "cuda", "cpu", o "auto"
+  mixed_precision: false
+  deterministic: false
+
+# Guardado de modelos
+model_saving:
+  save_best: true
+  best_metric: "val_accuracy"
+  checkpoint_dir: "results/models/"
+  checkpoint_filename: "best_densenet_privacy.pth"
+  save_strategy: "best_only"
+
+# Configuración de evaluación
+evaluation:
+  # Optimización de threshold
+  threshold_optimization:
+    enabled: true
+    method: "grid_search"
+    range: [0.0, 1.0]
+    steps: 101
+    metric: "accuracy"
+
+  # Métricas detalladas
+  detailed_metrics:
+    - "accuracy"
+    - "precision_macro"
+    - "precision_binary"
+    - "recall_macro"
+    - "recall_binary"
+    - "f1_macro"
+    - "f1_binary"
+    - "auc_roc"
+    - "confusion_matrix"
+
+  # Configuración de visualizaciones
+  visualizations:
+    confusion_matrix:
+      enabled: true
+      colormap: "Blues"
+      normalize: false
+
+    roc_curve:
+      enabled: true
+      show_auc: true
+
+    training_curves:
+      enabled: true
+      metrics: ["loss", "accuracy"]
+
+    prediction_examples:
+      enabled: true
+      num_samples: 5
+
+# Configuración específica para VizWiz Privacy Dataset
+dataset:
+  name: "vizwiz_privacy"
+  splits: ["train", "val", "test"]
+  annotation_format: "json"
+  image_format: "png"
+
+  # Distribución esperada
+  class_distribution:
+    expected_imbalance: true
+    majority_class: 0 # Pública
+    minority_class: 1 # Privada
+    rebalance_strategy: "weighted_sampling"
+
+# Configuraciones experimentales avanzadas
+experimental:
+  # MixUp específico
+  mixup_advanced:
+    beta_distribution: true
+    mixup_prob: 1.0
+    cutmix_enabled: false
+    manifold_mixup: false
+
+  # Focal Loss tuning
+  focal_loss_tuning:
+    gamma_range: [1.0, 3.0]
+    auto_tune: false
+    class_alpha: "auto"
+
+# Configuración de logging y reproducibilidad
+logging:
+  level: "info"
+  log_every_n_steps: 50
+  save_plots: true
+  plot_dir: "results/plots/"
+
+  # Tracking de experimentos
+  experiment_tracking:
+    enabled: false
+    platform: "wandb" # "wandb", "tensorboard", "mlflow"
+    project_name: "densenet121_privacy"
+
+reproducibility:
+  seed: 42
+  deterministic: false # MPS no soporta deterministic
+  benchmark: true
+
+# Rutas de archivos
+paths:
+  annotations_dir: "../Downloads/Annotations"
+  image_dir: "../Downloads/Filling_Images"
+  output_dir: "results/"
+  checkpoint_dir: "results/models/"
+  plots_dir: "results/plots/"
+
+# Configuración específica para diferentes entornos
+environment:
+  # Local development
+  local:
+    num_workers: 0
+    pin_memory: false
+    device_preference: ["mps", "cuda", "cpu"]
+
+  # Colab/Cloud
+  colab:
+    num_workers: 2
+    pin_memory: true
+    device_preference: ["cuda", "cpu"]
+    mount_drive: true
+    drive_path: "/content/drive/MyDrive/"
+
+# Validación de configuración
+validation:
+  check_paths: true
+  verify_dataset: true
+  test_transforms: true
+  validate_model: true
+
+# Metadatos del experimento
+experiment:
+  name: "densenet121_privacy_v1"
+  tags:
+    - "densenet121"
+    - "privacy_classification"
+    - "binary_classification"
+    - "mixup"
+    - "focal_loss"
+    - "differential_lr"
+    - "transfer_learning"
+  notes: |
+    Modelo DenseNet121 optimizado para clasificación de privacidad con:
+    - MixUp para data augmentation
+    - Focal Loss para clases desbalanceadas
+    - Learning rates diferenciales por bloque
+    - Weighted Random Sampling
+    - Threshold optimization
+
+  # Resultados esperados
+  expected_results:
+    target_accuracy: 0.85
+    target_f1: 0.80
+    target_auc: 0.90

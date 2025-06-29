@@ -1,0 +1,6 @@
+RESUMEN FINAL DE EVALUACIÓN
+==================================================
+• Total de imágenes evaluadas: 3402
+• Accuracy global: 86.13%
+• AUC-ROC: 0.8993
+• Umbral óptimo: 0.383

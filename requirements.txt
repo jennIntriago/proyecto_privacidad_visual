@@ -1,0 +1,17 @@
+# Core de Machine Learning y Deep Learning
+torch
+torchvision
+tensorflow
+ultralytics
+
+# Manipulación de Datos y Computación Numérica
+pandas
+numpy
+scikit-learn  # Para métricas como confusion_matrix, classification_report, etc.
+
+# Visualización y Utilidades
+matplotlib
+seaborn
+Pillow        # Para el manejo de imágenes (importado como PIL)
+tqdm          # Para las barras de progreso
+PyYAML        # Para cargar los archivos de configuración .yaml

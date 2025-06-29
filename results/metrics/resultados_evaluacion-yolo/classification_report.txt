@@ -1,0 +1,10 @@
+REPORTE DE CLASIFICACIÓN
+==================================================
+              precision    recall  f1-score   support
+
+     private       0.72      0.85      0.78      1394
+      public       0.88      0.76      0.82      2008
+
+    accuracy                           0.80      3402
+   macro avg       0.80      0.81      0.80      3402
+weighted avg       0.81      0.80      0.80      3402

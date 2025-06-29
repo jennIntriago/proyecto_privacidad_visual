@@ -1,26 +1,27 @@
 # Proyecto de Clasificación de Privacidad Visual
 
-Clasificación automática de imágenes como "privadas" o "públicas" utilizando arquitecturas de deep learning.
+## Resumen
 
-## Modelos Implementados
-- **ResNet50**: Arquitectura residual con transfer learning
-- **DenseNet121**: Redes densamente conectadas
-- **YOLOv8**: Detección y clasificación en tiempo real
+Este proyecto aborda la clasificación automática de imágenes como "privadas" o "públicas" mediante la implementación y evaluación comparativa de tres arquitecturas de redes neuronales convolucionales (CNN). El objetivo es desarrollar un modelo robusto y preciso que pueda identificar contenido sensible en imágenes, una tarea fundamental en el campo de la privacidad y la seguridad de datos. Se exploran técnicas de transfer learning y fine-tuning para optimizar el rendimiento de los modelos.
 
-## Estructura del Proyecto
-proyecto_privacidad_visual/
-├── data/                   # Datos del proyecto
-├── models/                 # Arquitecturas de modelos
-├── src/                    # Código fuente
-├── notebooks/              # Jupyter notebooks
-├── configs/                # Archivos de configuración
-└── results/                # Resultados y métricas
+# Modelos Implementados
+
+ResNet50: Arquitectura residual profunda, utilizando una estrategia de fine-tuning en dos fases.
+
+DenseNet121: Redes densamente conectadas que mejoran el flujo de gradientes, con fine-tuning en las capas superiores.
+
+YOLOv8-cls: Versión de clasificación de la reconocida arquitectura YOLO, optimizada para un alto rendimiento.
+
+## Dataset
+
+Este proyecto utiliza el dataset VizWiz para la clasificación de privacidad. El dataset debe ser descargado y colocado en la estructura de directorios correcta antes de ejecutar el pre-procesamiento.
+
+Fuente (URL): https://vizwiz.org/tasks-and-datasets/vizwiz-priv/
+
 ## Instalación
+
 ```bash
 pip install -r requirements.txt
 
-Uso
-[Instrucciones de uso aquí]
-Resultados
-[Métricas y comparación de modelos]
 
+```

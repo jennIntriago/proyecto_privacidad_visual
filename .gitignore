@@ -73,3 +73,5 @@ wandb/
 # Temporary files
 *.tmp
 *.temp
+
+/data/processed/yolo_dataset/

@@ -1,0 +1,312 @@
+# Configuración para YOLOv8 - Clasificación de Privacidad Visual
+# Autor: Jennifer Intriago
+# Fecha: 2025
+
+project:
+  name: "proyecto_privacidad_visual"
+  model_name: "yolov8_privacy_classifier"
+  description: "Clasificación de imágenes privadas/públicas usando YOLOv8 para clasificación"
+  version: "1.0"
+  project_dir: "Privacy_Classification_Project"
+  experiment_name: "YOLOv8n_cls_run_optimized"
+
+# Configuración del modelo
+model:
+  architecture: "yolov8"
+  variant: "yolov8n-cls" # yolov8n-cls, yolov8s-cls, yolov8m-cls, yolov8l-cls, yolov8x-cls
+  pretrained: true
+  pretrained_weights: "yolov8n-cls.pt"
+  task: "classify"
+  num_classes: 2
+  class_names: ["public", "private"]
+
+# Configuración de datos
+data:
+  # Estructura de directorios YOLO
+  dataset_structure: "classification" # Para YOLOv8 classification
+  input_size: 224
+  batch_size: 16 # Reducido de 32 a 16 para mejor estabilidad
+  num_workers: 4
+
+  # Directorios de datos
+  raw_data:
+    json_dir: "../Downloads/Annotations"
+    image_dir: "../Downloads/Filling_Images"
+
+  processed_data:
+    yolo_dataset_dir: "./yolo_dataset"
+    dataset_yaml: "dataset.yaml"
+
+  # Archivos corruptos conocidos a ignorar
+  corrupt_images:
+    - "VizWiz_v2_000000036425.png"
+    - "VizWiz_v2_000000040791.png"
+
+  # Distribución de datos
+  splits:
+    train: "train"
+    val: "val"
+    test: "test"
+
+# Configuración de entrenamiento
+training:
+  epochs: 100 # Aumentado de 50 a 100
+  patience: 20 # Aumentado de 15 a 20 para mejor convergencia
+  imgsz: 224
+  batch: 16
+
+  # Dispositivo y optimización
+  device: "auto" # mps, cuda, cpu, auto
+  mixed_precision: true
+  verbose: true
+  plots: true
+  save: true
+  exist_ok: true
+
+  # Optimizador y learning rate
+  optimizer: "AdamW"
+  lr0: 0.001 # Learning rate inicial
+  lrf: 0.01 # Learning rate final (factor)
+  momentum: 0.937
+  weight_decay: 0.0005
+
+  # Warmup y scheduling
+  warmup_epochs: 3
+  warmup_momentum: 0.8
+  warmup_bias_lr: 0.1
+
+  # Regularización
+  dropout: 0.0
+  label_smoothing: 0.0
+
+# Data Augmentation avanzado
+augmentation:
+  enabled: true
+
+  # Augmentaciones de color (HSV)
+  hsv_h: 0.015 # Hue augmentation (0-1)
+  hsv_s: 0.7 # Saturation augmentation (0-1)
+  hsv_v: 0.4 # Value/brightness augmentation (0-1)
+
+  # Augmentaciones geométricas
+  degrees: 0.5 # Rotation augmentation (degrees)
+  translate: 0.1 # Translation augmentation (fraction)
+  scale: 0.5 # Scale augmentation (fraction)
+  shear: 0.5 # Shear augmentation (degrees)
+  perspective: 0.0 # Perspective augmentation (fraction)
+
+  # Flip augmentations
+  flipud: 0.0 # Vertical flip probability
+  fliplr: 0.5 # Horizontal flip probability
+
+  # Advanced augmentations
+  mosaic: 1.0 # Mosaic augmentation probability
+  mixup: 0.0 # MixUp augmentation probability
+  copy_paste: 0.0 # Copy-paste augmentation probability
+
+# Configuración de evaluación
+evaluation:
+  # Métricas a calcular
+  metrics:
+    - "accuracy_top1"
+    - "accuracy_top5"
+    - "loss"
+    - "precision"
+    - "recall"
+    - "f1_score"
+    - "auc_roc"
+    - "confusion_matrix"
+
+  # Configuración de validación
+  validation:
+    split: "test"
+    plots: true
+    save_json: true
+    save_hybrid: false
+    conf: 0.001
+
+  # Análisis detallado
+  detailed_analysis:
+    confusion_matrix: true
+    classification_report: true
+    roc_curve: true
+    prediction_examples: true
+    error_analysis: true
+
+  # Threshold optimization para clasificación binaria
+  threshold_optimization:
+    enabled: true
+    method: "roc_analysis"
+    save_results: true
+
+# Configuración de predicción
+prediction:
+  conf_threshold: 0.5
+  save_predictions: true
+  visualize: true
+
+  # Directorios para ejemplos
+  examples:
+    output_dir: "./predicciones_ejemplo"
+    custom_images_dir: "./imagenes_propias"
+    num_random_samples: 4
+    samples_per_class: 2
+
+# Configuración de hardware
+hardware:
+  device_preference: ["mps", "cuda", "cpu"] # Orden de preferencia
+  workers: 4
+  pin_memory: true
+  amp: true # Automatic Mixed Precision
+
+# Configuración de logging y guardado
+logging:
+  level: "INFO"
+  verbose: true
+
+  # Tracking de experimentos
+  wandb:
+    enabled: false
+    project: "yolov8_privacy_classification"
+    entity: null
+    tags: ["yolov8", "classification", "privacy"]
+
+  # Guardado de resultados
+  save_dir: "runs/classify"
+  name: "yolov8_privacy_exp"
+  exist_ok: true
+
+  # Plots y visualizaciones
+  plots: true
+  save_json: true
+  save_hybrid: false
+
+# Configuración específica de YOLOv8
+yolo_specific:
+  # Configuraciones del modelo
+  model_config:
+    yaml_file: null # Se generará automáticamente
+    ch: 3 # Canales de entrada
+    nc: 2 # Número de clases
+
+  # Configuraciones de entrenamiento específicas
+  training_config:
+    close_mosaic: 10 # Épocas para cerrar mosaic
+    amp: true # Automatic Mixed Precision
+    fraction: 1.0 # Fracción del dataset a usar
+    profile: false # Profiling de velocidad
+
+  # Configuraciones de validación
+  validation_config:
+    save_txt: false
+    save_conf: false
+    plots: true
+
+# Dataset preprocessing
+preprocessing:
+  # Validación de imágenes
+  image_validation:
+    enabled: true
+    check_corruption: true
+    verify_integrity: true
+    supported_formats: [".png", ".jpg", ".jpeg"]
+
+  # Estructura de directorios
+  directory_structure:
+    root: "yolo_dataset"
+    train_dir: "train"
+    val_dir: "val"
+    test_dir: "test"
+    class_subdirs: true
+
+# Configuración de reproducibilidad
+reproducibility:
+  seed: 42
+  deterministic: false # Para mejor rendimiento en entrenamiento
+  workers_seed: true
+
+# Post-procesamiento y análisis
+post_processing:
+  # Generación de reportes
+  reports:
+    classification_report: true
+    confusion_matrix: true
+    training_curves: true
+    prediction_examples: true
+
+  # Guardado de resultados
+  save_results: true
+  results_dir: "./resultados_evaluacion"
+
+  # Análisis de errores
+  error_analysis:
+    enabled: true
+    save_misclassified: true
+    confidence_analysis: true
+
+# Configuraciones avanzadas
+advanced:
+  # Optimizaciones de rendimiento
+  performance:
+    compile: false # PyTorch 2.0 compile
+    half: false # FP16 inference
+
+  # Callbacks personalizados
+  callbacks:
+    early_stopping: false
+    model_checkpoint: true
+    reduce_lr_on_plateau: false
+
+  # Fine-tuning específico
+  fine_tuning:
+    freeze_backbone: false
+    unfreeze_epoch: null
+    differential_lr: false
+
+# Validación de configuración
+validation_rules:
+  required_fields:
+    - "model.variant"
+    - "data.input_size"
+    - "training.epochs"
+    - "training.batch"
+
+  value_ranges:
+    epochs: [1, 1000]
+    batch_size: [1, 128]
+    learning_rate: [1e-6, 1e-1]
+    input_size: [32, 1024]
+
+# Metadatos del experimento
+experiment:
+  name: "yolov8_privacy_classification_v1"
+  description: |
+    Experimento de clasificación de privacidad usando YOLOv8n-cls con:
+    - Data augmentation optimizado para el dominio
+    - Validación de integridad de imágenes
+    - Análisis detallado de errores
+    - Optimización de threshold para clasificación binaria
+
+  tags:
+    - "yolov8"
+    - "classification"
+    - "privacy"
+    - "binary_classification"
+    - "transfer_learning"
+    - "data_augmentation"
+
+  author: "Jennifer Intriago"
+  date: "2025"
+
+  # Resultados esperados
+  expected_performance:
+    target_accuracy: 0.85
+    target_precision: 0.83
+    target_recall: 0.87
+    target_f1: 0.85
+
+  # Configuración del hardware usado
+  hardware_info:
+    gpu_type: "Apple Silicon MPS / NVIDIA CUDA"
+    memory_gb: 16
+    compute_capability: "Auto-detect"
